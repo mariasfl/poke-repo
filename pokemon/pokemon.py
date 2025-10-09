@@ -6,6 +6,7 @@ from pathlib import Path
 from pprint import pprint
 
 class Pokemon:
+
     current_dir = Path(__file__).parent
     ### TODO: Move to another module     
     # If moved, uses import from that module
@@ -45,8 +46,11 @@ class Pokemon:
         # Always creating base stats
         self._stats = Stats(
             csv_path=str(Pokemon.csv_path), 
-            pokedex_num=pokedex_num
+            pokedex_num=pokedex_num,
+            level=self._level # Level will affect base stats
         )
+        # se agregó la última línea para que las estadísticas base se ajusten
+        # al nivel del Pokémon
         #! Here logic can be added to modify stats based on level
 
         #* Changed to protected
@@ -54,7 +58,7 @@ class Pokemon:
         self._resistances = []
         self._immunities = []
 
-        ### TODO: Moveset
+        ## TODO: Moveset
         # Shoudl be managed by another class -> composition
         # Because a pokemon HAS a moveset
         # This is a tricky one, moveset depends on level, type and pokemon
@@ -71,13 +75,16 @@ class Pokemon:
         #* Add docstring
         if self._level < 100:
             self._level += 1
+            growth = 1.03 # 3% growth per level
+            #* Alternatively, recalculate stats using the Stats class
+
             #? Check where these multipliers come from
-            self._stats.hp = round(self._stats.hp * 1.020)
-            self._stats.attack = round(self._stats.attack * 1.017)
-            self._stats.defense = round(self._stats.defense * 1.016)
-            self._stats.sp_attack = round(self._stats.sp_attack * 1.017)
-            self._stats.sp_defense = round(self._stats.sp_defense * 1.016)
-            self._stats.speed = round(self._stats.speed * 1.015)
+            self._stats.hp = round(self._stats.hp * growth)
+            self._stats.attack = round(self._stats.attack * growth)
+            self._stats.defense = round(self._stats.defense * growth)
+            self._stats.sp_attack = round(self._stats.sp_attack * growth)
+            self._stats.sp_defense = round(self._stats.sp_defense * growth)
+            self._stats.speed = round(self._stats.speed * growth)
             
             print(f"{self._name} leveled up to level {self._level}!")
         else:
@@ -133,21 +140,28 @@ class Pokemon:
 
 ### TODO: Move to another module      
 class Stats():
-    def __init__(self, csv_path: str, pokedex_num: int):
+    def __init__(self, csv_path: str, pokedex_num: int, level: int = 1):
+        
         df = pd.read_csv(csv_path)
         row = df.loc[df['pokedex_number'] == pokedex_num]
-        self.base_hp = int(row['hp'].values[0])
-        self.base_attack = int(row['attack'].values[0])
-        self.base_defense = int(row['defense'].values[0])
-        self.base_sp_attack = int(row['sp_atk'].values[0])
-        self.base_sp_defense = int(row['sp_def'].values[0])
-        self.base_speed = int(row['speed'].values[0])
-        self.hp = self.base_hp
-        self.attack = self.base_attack
-        self.defense = self.base_defense
-        self.sp_attack = self.base_sp_attack
-        self.sp_defense = self.base_sp_defense
-        self.speed = self.base_speed
+        self.base_hp = int(row['hp'])
+        self.base_attack = int(row['attack'])
+        self.base_defense = int(row['defense'])
+        self.base_sp_attack = int(row['sp_atk'])
+        self.base_sp_defense = int(row['sp_def'])
+        self.base_speed = int(row['speed'])
+
+        #Linear growth factor: +3% for each additional level
+        growth = 1 + (0.03 * (level - 1))
+
+        self.base_hp = round(self.base_hp * growth)
+        self.base_attack = round(self.base_attack * growth)
+        self.base_defense = round(self.base_defense * growth)
+        self.base_sp_attack = round(self.base_sp_attack * growth)
+        self.base_sp_defense = round(self.base_sp_defense * growth)
+        self.base_speed = round(self.base_speed * growth)
+
+
 
     def combat_stats(self, accuracy = "100%", evasion = "100%"):
         self.accuracy = accuracy
@@ -308,3 +322,4 @@ if __name__ == "__main__":
     )
     charmander.attack()
     print(charmander.get_stats())
+
